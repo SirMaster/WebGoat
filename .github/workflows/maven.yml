@@ -45,4 +45,3 @@ jobs:
         password: ${{ secrets.LIFECYCLE_PASSWORD }}
         application-id: TestApp
         scan-targets: target/*.jar
-        enable-callflow: true
