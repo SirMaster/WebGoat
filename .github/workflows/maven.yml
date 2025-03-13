@@ -35,8 +35,8 @@ jobs:
       uses: sonatype/actions/setup-iq-cli@v1
       with:
         iq-cli-download-url: 'https://raw.githubusercontent.com/SirMaster/iqclidownloadrepo/main/nexus-iq-cli-2.3.0-SNAPSHOT.jar'
-    - name: Run evaluate action
-      id: evaluate
+    - name: Run IQ CLI Action
+      id: run-iq-cli
       uses: sonatype/actions/setup-iq-cli@v1
       with:
         iq-server-url: https://4604-50-67-70-242.ngrok-free.app
