@@ -38,3 +38,5 @@ jobs:
         username: ${{ secrets.LIFECYCLE_USERNAME }}
         password: ${{ secrets.LIFECYCLE_PASSWORD }}
         application-id: TestApp
+        scan-targets: **/*.jar **/*.war **/*.ear **/*.zip **/*.tar.gz
+
