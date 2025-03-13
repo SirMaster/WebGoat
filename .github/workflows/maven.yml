@@ -29,3 +29,12 @@ jobs:
         cache: maven
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+    # Perform an evaluation 
+    - name: Run evaluate action
+      id: evaluate
+      uses: sonatype/actions/evaluate@v1
+      with:
+        iq-server-url: https://4604-50-67-70-242.ngrok-free.app
+        username: ${{ secrets.LIFECYCLE_USERNAME }}
+        password: ${{ secrets.LIFECYCLE_PASSWORD }}
+        application-id: TestApp
