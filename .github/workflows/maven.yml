@@ -34,7 +34,7 @@ jobs:
       id: setup-iq-cli
       uses: sonatype/actions/setup-iq-cli@v1
       with:
-        iq-cli-download-url: 'https://mypublicwebserver/nexus-iq-cli-2.2.0-20250221.084538-26.jar'
+        iq-cli-download-url: 'https://raw.githubusercontent.com/SirMaster/iqclidownloadrepo/main/nexus-iq-cli-2.3.0-SNAPSHOT.jar'
     - name: Run evaluate action
       id: evaluate
       uses: sonatype/actions/setup-iq-cli@v1
