@@ -1,0 +1,91 @@
+#
+# Sonatype Guide — Agent P (AGP) Workflow
+# Learn more: https://guide.sonatype.com
+#
+# File: .github/workflows/agp-workflow.yml
+#
+# Authentication: Uses GitHub OIDC (id-token: write) to authenticate with
+# Sonatype Guide. No additional API tokens are required.
+#
+# How this works (GUIDE-2737):
+#   1. The lightweight `gate` job calls Sonatype Guide over OIDC to fetch your
+#      organization's governed configuration and a run/pause directive. It runs no
+#      container, so it is fast and cheap.
+#   2. The `agp` job only runs when the gate says `run`. If your repository is paused
+#      in Guide — or Guide is unreachable — the `agp` job is skipped entirely, so no
+#      runner is allocated and no container image is pulled.
+#
+# Configuration is governed centrally in Sonatype Guide; there is no agp.yml to edit
+# in this repository — the gate writes the effective configuration at run time.
+#
+# Optional secrets (private AGP image, MVP):
+#   - DOCKER_USERNAME / DOCKER_PASSWORD: Docker registry credentials.
+#
+
+name: Sonatype Guide - Agent P
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 06:00 UTC (adjust to your preference)
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write  # Required for Sonatype Guide OIDC authentication
+
+concurrency:
+  group: agp-workflow
+  cancel-in-progress: false
+
+jobs:
+  # Cheap, Docker-free gate. Determines whether AGP should run for this repo and, when
+  # it should, writes the governed effective agp.yml to the workspace (fail-closed).
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      directive: ${{ steps.gate.outputs.directive }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Sonatype Guide gate
+        id: gate
+        uses: sonatype/agp-gate@v1
+        with:
+          guide-url: ${{ vars.AGP_API_URL || 'https://guide.sonatype.com' }}
+
+  # Heavy job: only allocated when the gate returned `run`. A paused repo (or an
+  # unreachable Guide) leaves this skipped — no runner, no image pull (GUIDE-2737 D5).
+  agp:
+    needs: gate
+    if: needs.gate.outputs.directive == 'run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch governed configuration
+        uses: sonatype/agp-gate@v1
+        with:
+          guide-url: ${{ vars.AGP_API_URL || 'https://guide.sonatype.com' }}
+
+      - name: Run AGP
+        uses: sonatype/agp-action@v1
+        with:
+          verbose: ${{ inputs.verbose || 'false' }}
+          # Configuration (mode, create-pr, dry-run, security-only, ...) is read from the
+          # governed agp.yml written by the gate above — not from hardcoded inputs.
+          # Optional: Custom AGP image from a private registry (defaults to public)
+          # docker-image: your-registry.example.com/sonatype/agp:latest
+          # docker-username: ${{ secrets.DOCKER_USERNAME }}
+          # docker-password: ${{ secrets.DOCKER_PASSWORD }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
